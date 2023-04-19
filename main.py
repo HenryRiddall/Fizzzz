@@ -1,10 +1,42 @@
-class Word_Rule():
-    def __init__(self, trigger, word, priority):
-        self.trigger = trigger
-        self.word = word
+import sys
+
+class Rule():
+    __description__ = "Undescribed rule"
+
+    def __init__(self, triggers, priority):
+        self.triggers = triggers
         self.priority = priority
+    
+    def update_output(self, output):
+        pass
 
+class Word_Rule(Rule):
+    __description__ = "Add a word to the end of the output string"
 
+    def __init__(self, triggers, priority):
+        super().__init__(triggers, priority)
+        self.word = input("What word shoud be added? ")
+
+    def update_output(self, output):
+        output.append(self.word)
+
+class Flip_Rule(Rule):
+    __description__ = "Flip the output string"
+
+    def __init__(self, triggers, priority):
+        super().__init__(triggers, priority)
+    
+    def update_output(self, output):
+        output.reverse()
+
+class Clear_Rule(Rule):
+    __description__ = "Clear the current string"
+
+    def __init__(self, triggers, priority):
+        super().__init__(triggers, priority)
+    
+    def update_output(self, output):
+        output.clear()
 
 def get_num(question, valid_nums=[]):
     num = None
@@ -23,21 +55,40 @@ def get_num(question, valid_nums=[]):
     return num
 
 def get_rules():
-    word_rules = []
-    flip_rules = []
+    rules = []
     more_rules = True
 
+    rule_types = Rule.__subclasses__()
+    rule_prompt = "When this rule is triggered it should "
+
+    for i, subclass in enumerate(rule_types):
+        rule_prompt = rule_prompt + '{0}: {1} '.format(str(i), subclass.__description__)
+
     while more_rules:
-        rule_trigger = get_num("For this rule multiples of which number should trigger it? ")
+        print("")
+        rule_triggers = []
+        
+        more_triggers = True
+        while more_triggers:
+            rule_triggers.append(get_num("For this rule multiples of which number should trigger it? "))
 
-        rule_action_type = get_num("When this rule is triggered should 1: a word be added    2: flip the order of words ", [1,2])
+            more_triggers_input = ""
 
-        if rule_action_type == 1:
-            rule_word = input("What word shoud be added? ")
-            rule_priority = get_num("What will this words priority be in the order? ")
-            word_rules.append(Word_Rule(rule_trigger, rule_word, rule_priority))
-        else:
-            flip_rules.append(rule_trigger)
+            while more_triggers_input == "":
+                more_triggers_input = input("Would you like to add another trigger? (y/n) ")
+                if more_triggers_input == "y":
+                    break
+                elif more_triggers_input == "n":
+                    more_triggers = False
+                else:
+                    more_triggers_input = ""
+
+        rule_priority = get_num("What is the priority of this rule in the rule queue? ")
+
+
+        rule_action_type = get_num(rule_prompt, range(len(rule_types)))
+
+        rules.append(rule_types[rule_action_type](rule_triggers, rule_priority))
 
         
         more_rules_input = ""
@@ -50,30 +101,26 @@ def get_rules():
                 more_rules = False
             else:
                 more_rules_input = ""
+    print("")
 
-    return (word_rules, flip_rules)
+    return rules
 
 def fizzbuzz(num, rules):
-    word_rules = rules[0]
-    flip_rules = rules[1]
-
-    word_rules.sort(key=lambda x: x.priority)
+    rules.sort(key=lambda x: x.priority)
 
     for i in range(1, num):
 
         output = []
-        flip = False
 
-        for word_rule in word_rules:
-            if i % word_rule.trigger == 0:
-                output.append(word_rule.word)
-        
-        for flip_rule in flip_rules:
-            if i % flip_rule == 0:
-                flip = not flip
-        
-        if flip:
-            output.reverse()
+        for rule in rules:
+            apply_rule = True
+
+            for trigger in rule.triggers:
+                if i % trigger != 0:
+                    apply_rule = False
+            
+            if apply_rule:
+                rule.update_output(output)
         
         if not output:
             output.append(str(i))
