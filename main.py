@@ -46,23 +46,24 @@ def get_num(question, valid_nums=[]):
             num = int(input(question))
             if valid_nums:
                 if not num in valid_nums:
-                    print("That isnt a valid option")
+                    print("That isnt a valid option please enter a number from the list")
                     num = None
         except ValueError:
-            print("Enter a NUMBER")
+            print("Invalid input, please enter a single integer value")
 
     
     return num
 
 def get_rules():
+    print("\nPlease create your first rule!")
     rules = []
     more_rules = True
 
     rule_types = Rule.__subclasses__()
-    rule_prompt = "When this rule is triggered it should "
+    rule_prompt = "When this rule is triggered what should it do?\n"
 
     for i, subclass in enumerate(rule_types):
-        rule_prompt = rule_prompt + '{0}: {1} '.format(str(i), subclass.__description__)
+        rule_prompt = rule_prompt + '    {0}: {1}\n'.format(str(i), subclass.__description__)
 
     while more_rules:
         print("")
@@ -70,20 +71,21 @@ def get_rules():
         
         more_triggers = True
         while more_triggers:
-            rule_triggers.append(get_num("For this rule multiples of which number should trigger it? "))
+            rule_triggers.append(get_num("Please enter a number, multiples of this number will trigger the current rule:\n"))
 
             more_triggers_input = ""
 
             while more_triggers_input == "":
-                more_triggers_input = input("Would you like to add another trigger? (y/n) ")
+                more_triggers_input = input("Would you like to add another number to trigger this rule? (y/n)\n")
                 if more_triggers_input == "y":
                     break
                 elif more_triggers_input == "n":
                     more_triggers = False
                 else:
+                    print("Invalid input please enter y or n")
                     more_triggers_input = ""
 
-        rule_priority = get_num("What is the priority of this rule in the rule queue? ")
+        rule_priority = get_num("What is the priority of this rule (0 is low 999 is high)?\n")
 
 
         rule_action_type = get_num(rule_prompt, range(len(rule_types)))
@@ -100,6 +102,7 @@ def get_rules():
             elif more_rules_input == "n":
                 more_rules = False
             else:
+                print("Invalid input please enter y or n")
                 more_rules_input = ""
     print("")
 
@@ -130,4 +133,4 @@ def fizzbuzz(num, rules):
         print(output_string)
 
 if __name__ == '__main__':
-    fizzbuzz(get_num("How many numbers would you like to fizzbuzz? "), get_rules())
+    fizzbuzz(get_num("Welcome to FizzBuzzer!\nWhat is the max number you would like FizzBuzzer to calculate?\n"), get_rules())
