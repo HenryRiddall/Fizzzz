@@ -1,44 +1,20 @@
 import sys
 
-class Rule():
-    __description__ = "Undescribed rule"
 
-    def __init__(self, triggers, priority):
+class Rule_Type():
+    def __init__(self, description, function_builder):
+        self.description = description
+        self.function_builder = function_builder
+
+
+class Rule():
+    def __init__(self, triggers, priority, update_function):
         self.triggers = triggers
         self.priority = priority
-    
-    def update_output(self, output):
-        pass
+        self.update_function = update_function
 
-class Word_Rule(Rule):
-    __description__ = "Add a word to the end of the output string"
 
-    def __init__(self, triggers, priority):
-        super().__init__(triggers, priority)
-        self.word = input("What word shoud be added? ")
-
-    def update_output(self, output):
-        output.append(self.word)
-
-class Flip_Rule(Rule):
-    __description__ = "Flip the output string"
-
-    def __init__(self, triggers, priority):
-        super().__init__(triggers, priority)
-    
-    def update_output(self, output):
-        output.reverse()
-
-class Clear_Rule(Rule):
-    __description__ = "Clear the current string"
-
-    def __init__(self, triggers, priority):
-        super().__init__(triggers, priority)
-    
-    def update_output(self, output):
-        output.clear()
-
-def get_num(question, valid_nums=[]):
+def input_integer(question, valid_nums=[]):
     num = None
 
     while num == None:
@@ -51,59 +27,75 @@ def get_num(question, valid_nums=[]):
         except ValueError:
             print("Invalid input, please enter a single integer value")
 
-    
     return num
 
-def get_rules():
-    print("\nPlease create your first rule!")
-    rules = []
-    more_rules = True
+def input_bool(prompt):
+    current_input = ""
 
-    rule_types = Rule.__subclasses__()
+    while current_input == "":
+        current_input = input('{0} (y/n)\n'.format(prompt))
+        if current_input == "y":
+            return True
+        elif current_input == "n":
+            return False
+        else:
+            print("Invalid input please enter y or n")
+            current_input = ""
+
+def define_rule_types():
+    rule_types = []
+
+    def word_rule_function_builder():
+        word_to_add = input("What word should be added? \n")
+        return lambda current_output: current_output.append(word_to_add)
+    rule_types.append(Rule_Type("Add a word to the end of the output string", word_rule_function_builder))
+
+    def flip_rule_function_builder():
+        return lambda current_output: current_output.reverse()
+    rule_types.append(Rule_Type("Flip the output string", flip_rule_function_builder))
+
+    def clear_rule_function_builder():
+        return lambda current_output: current_output.clear()
+    rule_types.append(Rule_Type("Clear the current string", clear_rule_function_builder))
+
+    return rule_types
+
+def create_rule_prompt(rule_types):
     rule_prompt = "When this rule is triggered what should it do?\n"
 
-    for i, subclass in enumerate(rule_types):
-        rule_prompt = rule_prompt + '    {0}: {1}\n'.format(str(i), subclass.__description__)
+    for i, rule_type in enumerate(rule_types):
+        rule_prompt = rule_prompt + '    {0}: {1}\n'.format(str(i), rule_type.description)
 
-    while more_rules:
+    return rule_prompt
+
+def input_rule(rule_types, rule_prompt):
         print("")
         rule_triggers = []
         
         more_triggers = True
         while more_triggers:
-            rule_triggers.append(get_num("Please enter a number, multiples of this number will trigger the current rule:\n"))
+            rule_triggers.append(input_integer("Please enter a number, multiples of this number will trigger the current rule:\n"))
 
-            more_triggers_input = ""
+            more_triggers = input_bool("Would you like to add another number to trigger this rule?")
 
-            while more_triggers_input == "":
-                more_triggers_input = input("Would you like to add another number to trigger this rule? (y/n)\n")
-                if more_triggers_input == "y":
-                    break
-                elif more_triggers_input == "n":
-                    more_triggers = False
-                else:
-                    print("Invalid input please enter y or n")
-                    more_triggers_input = ""
+        rule_priority = input_integer("What is the priority of this rule (0 is applied first then 1 etc)?\n")
 
-        rule_priority = get_num("What is the priority of this rule (0 is low 999 is high)?\n")
+        rule_action_type = input_integer(rule_prompt, range(len(rule_types)))
 
+        return Rule(rule_triggers, rule_priority, rule_types[rule_action_type].function_builder())
 
-        rule_action_type = get_num(rule_prompt, range(len(rule_types)))
+def input_rules():
+    rules = []
+    more_rules = True
+    rule_types = define_rule_types()
+    rule_prompt = create_rule_prompt(rule_types)
 
-        rules.append(rule_types[rule_action_type](rule_triggers, rule_priority))
+    print("\nPlease create your first rule!")
+    while more_rules:
 
+        rules.append(input_rule(rule_types, rule_prompt))
         
-        more_rules_input = ""
-        
-        while more_rules_input == "":
-            more_rules_input = input("Would you like to add a rule? (y/n) ")
-            if more_rules_input == "y":
-                break
-            elif more_rules_input == "n":
-                more_rules = False
-            else:
-                print("Invalid input please enter y or n")
-                more_rules_input = ""
+        more_rules = input_bool("Would you like to add more rules?")
     print("")
 
     return rules
@@ -123,7 +115,7 @@ def fizzbuzz(num, rules):
                     apply_rule = False
             
             if apply_rule:
-                rule.update_output(output)
+                rule.update_function(output)
         
         if not output:
             output.append(str(i))
@@ -133,4 +125,4 @@ def fizzbuzz(num, rules):
         print(output_string)
 
 if __name__ == '__main__':
-    fizzbuzz(get_num("Welcome to FizzBuzzer!\nWhat is the max number you would like FizzBuzzer to calculate?\n"), get_rules())
+    fizzbuzz(input_integer("Welcome to FizzBuzzer!\nWhat is the max number you would like FizzBuzzer to calculate?\n"), input_rules())
